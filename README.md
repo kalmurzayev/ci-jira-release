@@ -27,5 +27,17 @@ Usage example `./generate_release_notes.sh -p ABC -v 2.5.0 -o fastlane/release_n
 Example notes:
 
 ```
+Version 2.4.5
+----------------
 
+What's new:
+
+ABC-1004: Create release notes automation script for dev teams
+ABC-1035: Implement another thing requested by product manager
+ABC-1036: Create new module for payment calculation
+
+Fixes:
+
+ABC-1047: Fix visual bug found in login page by Vladimir
+ABC-234: Fix Regression bug eliminated in release 2.1.1
 ```
