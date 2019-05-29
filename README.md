@@ -1,14 +1,15 @@
 # gen-jira-release-notes
-Scripts for generating JIRA project release notes based on git logs
+Scripts for generating JIRA project release notes based on git log history
 
 ### Prerequisites
 
 * Git commit format including JIRA tasks in commit messages or branch names
+* GitFlow-like development  (maintaining stable branches)
 * python 2.7+
 
 ### Format
 
-`./generate_release_notes.sh -p JIRA_PROJECT_NAME -v NEW_RELEASE_VERSION -o OUTPUT_FILE` 
+`./generate_release_notes.sh -v NEW_RELEASE_VERSION -o OUTPUT_FILE` 
 
 Generates release notes text for a new app version  and writes to specified file. It retrieves JIRA user credentials from `.jiracredentials.txt`. 
 
@@ -22,7 +23,7 @@ Release notes generation relies on contents of your `.jiracredentials.txt` file.
 
 ### Usage
 
-Usage example `./generate_release_notes.sh -p ABC -v 2.5.0 -o fastlane/release_notes.txt`
+Usage example `./generate_release_notes.sh -v 2.5.0 -o fastlane/release_notes.txt`
 
 Example notes:
 
@@ -34,10 +35,10 @@ What's new:
 
 ABC-1004: Create release notes automation script for dev teams
 ABC-1035: Implement another thing requested by product manager
-ABC-1036: Create new module for payment calculation
+DEF-1036: Create new module for payment calculation
 
 Fixes:
 
-ABC-1047: Fix visual bug found in login page by Vladimir
-ABC-234: Fix Regression bug eliminated in release 2.1.1
+DEF-1047: Fix visual bug found in login page by Vladimir
+XYZ-234: Fix Regression bug eliminated in release 2.1.1
 ```

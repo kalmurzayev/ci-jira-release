@@ -1,9 +1,7 @@
 
 # extracting shell script arguments
-while getopts ":p:v:o:" opt; do
+while getopts ":v:o:" opt; do
   case $opt in
-    p) jiraPrefix="$OPTARG"
-    ;;
     v) newVersion="$OPTARG"
     ;;
     o) output="$OPTARG"
@@ -33,20 +31,18 @@ jiraServerHost=${credentials[0]}
 jiraUsername=${credentials[1]}
 jiraPassword=${credentials[2]}
 
-echo "Generate release-notes for version $newVersion in project $jiraPrefix"
+echo "Generate release-notes for version $newVersion"
 echo "Latest tag on current branch: $latestTag"
 GIT_MESSAGES=$(git log -n 150 --oneline $(echo $latestTag)..HEAD)
 
-pattern="STR\-[0-9]+"
-
-matches=$(echo $GIT_MESSAGES | grep -Eo "$jiraPrefix\-[0-9]+" | sort | uniq )
+matches=$(echo $GIT_MESSAGES | grep -Eo "[A-Z]{2,5}\-[0-9]+" | sort | uniq )
 
 echo "\nExtracted JIRA tasks:"
 echo $matches
 
 matchesString=$( IFS=$' '; echo "${matches[*]}" )
 echo "Passing to python script..."
-generatedChangelog=$(python request_jira_tasks.py $jiraServerHost $jiraUsername $jiraPassword $(echo $matchesString))
+generatedChangelog=$(python -W ignore request_jira_tasks.py $jiraServerHost $jiraUsername $jiraPassword $(echo $matchesString))
 echo "Writing release-notes to file $output"
 echo "Version ${newVersion}\n----------------\n\n${generatedChangelog}" > $output
 

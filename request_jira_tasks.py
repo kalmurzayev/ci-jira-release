@@ -1,6 +1,7 @@
 import sys
 import json
 import requests
+jira_bugfix_type = '10203'
 
 ## Get Jira details
 def get_jira_task_name(jira_server, jira_user, jira_pw, jira_key):
@@ -13,23 +14,20 @@ def get_jira_task_name(jira_server, jira_user, jira_pw, jira_key):
         jira = req.json()
         task_type = jira["fields"]["issuetype"]["id"]
         task_name = jira["fields"]["summary"].encode('utf-8')
-        # print 'type: ' + task_type
-        # print '\t'+ task_name
         return [task_type, task_name]
     except requests.exceptions.Timeout:
-        print('Timeout trying to connect to jira')
-        sys.exit()
+        return [jira_bugfix_type, 'title unavailable, request timeout']
     except requests.exceptions.RequestException as exep:
         # catastrophic error. bail.
-        print('error connecting to jira: ' + str(exep))
-        sys.exit()
+        #print('error connecting to jira: ' + str(exep))
+        return [jira_bugfix_type, 'title unavailable, jira connection error']
+        
 
 jira_server_arg = sys.argv[1]
 jira_user_arg = sys.argv[2]
 jira_password_arg = sys.argv[3]
 jira_key_arg_strings = sys.argv[4:]
 
-jira_bugfix_type = '10203'
 extracted_features = []
 extracted_bugfixes = []
 for jira_key_arg in jira_key_arg_strings:
