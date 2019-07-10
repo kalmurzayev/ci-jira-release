@@ -19,31 +19,39 @@ then
 	exit 1
 fi
 
-# reading contents of user specified .jiracredentials.txt
-if [ ! -f .jiracredentials.txt ] 
+# ------------- Reading JIRA credentials ------------------
+credentialsFile=".jiracredentials.txt"
+if [ ! -f $credentialsFile ] 
 then
-	echo '\033[0;31mNo .jiracredentials.txt file found'
-	exit 1
+  echo '\033[0;31mNo .jiracredentials.txt file not passed or found'
+  exit 1
 fi
-credentialsFileContents=$(<.jiracredentials.txt)
+credentialsFileContents=$(<$credentialsFile)
 IFS=$' ' read -ra credentials <<< "$credentialsFileContents"
 jiraServerHost=${credentials[0]}
 jiraUsername=${credentials[1]}
 jiraPassword=${credentials[2]}
+jiraQaTransitionId="81"
 
-# ----------- Start script actions -------------------
+# --------------- Start script actions -------------------
 releaseArtTextEncoded="$(base64 -D <<< "ICAgX19fICAgICAgICAgICAgICBfICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgfCBfIFwgICAgX19fICAgICB8IHwgICAgIF9fXyAgICBfXyBfICAgICBfX18gICAgIF9fXyAgIAogIHwgICAvICAgLyAtXykgICAgfCB8ICAgIC8gLV8pICAvIF9gIHwgICAoXy08ICAgIC8gLV8pICAKICB8X3xfXCAgIFxfX198ICAgX3xffF8gICBcX19ffCAgXF9fLF98ICAgL19fL18gICBcX19ffCAgCl98IiIiIiJ8X3wiIiIiInxffCIiIiIifF98IiIiIiJ8X3wiIiIiInxffCIiIiIifF98IiIiIiJ8IAoiYC0wLTAtJyJgLTAtMC0nImAtMC0wLSciYC0wLTAtJyJgLTAtMC0nImAtMC0wLSciYC0wLTAtJyA=")"
 echo "$releaseArtTextEncoded"
 echo "\n\nGenerate release-notes for version\033[0;32m $newVersion\033[0m"
-echo "Latest tag on current branch: $latestTag"
-GIT_MESSAGES=$(git log -n 150 --oneline $(echo $latestTag)..HEAD)
+jiraTaskIds=$(./ci_extract_jira_tasks_git.sh )
+matchesString=$( IFS=$' '; echo "${jiraTaskIds[*]}" )
+echo "\nSending Jira REST API requests. Hold your breath..."
+generatedChangelog=$(python -W ignore request_jira_tasks.py $jiraServerHost $jiraUsername $jiraPassword $(echo $jiraTaskIds))
 
-matches=$(echo $GIT_MESSAGES | grep -Eo "[A-Z]{2,5}\-[0-9]+" | sort | uniq )
-echo "\nThis Jira task were extracted from git logs:"
-echo $matches
-matchesString=$( IFS=$' '; echo "${matches[*]}" )
-echo "\nSending $matchesCount Jira REST API requests. Hold your breath..."
-generatedChangelog=$(python -W ignore request_jira_tasks.py $jiraServerHost $jiraUsername $jiraPassword $(echo $matchesString))
-echo "Writing release-notes to output file..."
-echo "Version ${newVersion}\n----------------\n\n${generatedChangelog}" > $output
-echo "\033[0;32mDONE. Checkout $output"
+if [ -z $output ]
+then
+    echo "$generatedChangelog"
+else
+    versionText="Version ${newVersion}"
+    if [ -z $newVersion ]
+    then
+        versionText="Next version candidate"
+    fi
+    echo "Writing release-notes to output file..."
+    echo -e "${versionText}\n----------------\n\n${generatedChangelog}" > $output
+    echo "\033[0;32mDONE. Checkout $output"
+fi
