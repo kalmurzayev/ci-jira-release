@@ -9,9 +9,11 @@ Scripts for generating JIRA project release notes based on git log history
 
 ### Format
 
-`./generate_release_notes.sh -v NEW_RELEASE_VERSION -o OUTPUT_FILE` 
+`./ci_generate_release_notes.sh -v NEW_RELEASE_VERSION -o OUTPUT_FILE` 
 
 Generates release notes text for a new app version  and writes to specified file. It retrieves JIRA user credentials from `.jiracredentials.txt`. 
+
+If called with no parameters, it collects Jira issues starting from latest deployment commit matched by regex (see script for details)
 
 ### Credentials file
 
@@ -23,7 +25,7 @@ Release notes generation relies on contents of your `.jiracredentials.txt` file.
 
 ### Usage
 
-Usage example `./generate_release_notes.sh -v 2.5.0 -o fastlane/release_notes.txt`
+Usage example `./ci_generate_release_notes.sh -v 2.5.0 -o fastlane/release_notes.txt`
 
 Example notes:
 
