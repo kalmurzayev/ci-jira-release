@@ -6,29 +6,15 @@
 
 
 # ------------ Building Jira comment body ------------------
-# extracting shell script arguments
-while getopts ":m:t:" opt; do
-  case $opt in
-    m) jiraCommentText="$OPTARG"
-    ;;
-    t) jiraQaTransitionId="$OPTARG"
-    ;;
-    \?) echo "\e[31Invalid option -$OPTARG" >&2
-    ;;
-  esac
-done
-
-if [ -z $jiraCommentText ]
+tempFile="build_number.txt"
+fastlane write_build_version_file filename:$tempFile
+currentBuildNumber=$(<fastlane/$tempFile)
+if [ -z $currentBuildNumber ]
 then
-	echo "No comment text was specified"
+	echo "EMPTY"
     exit 0
 fi
-if [ -z $jiraQaTransitionId ]
-then
-	echo "No Jira transition ID was specified"
-    exit 0
-fi
-
+jiraCommentText="AlfaBank Dev build #$currentBuildNumber"
 
 # ------------- Reading JIRA credentials ------------------
 credentialsFile=".jiracredentials.txt"
@@ -42,6 +28,7 @@ IFS=$' ' read -ra credentials <<< "$credentialsFileContents"
 jiraServerHost=${credentials[0]}
 jiraUsername=${credentials[1]}
 jiraPassword=${credentials[2]}
+jiraQaTransitionId="81"
 
 # --------------- Start script actions -------------------
 jiraTaskIds=$(./ci_extract_jira_tasks_git.sh )

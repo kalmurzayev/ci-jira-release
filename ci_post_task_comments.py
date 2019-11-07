@@ -1,3 +1,10 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#description  :CI/CD скрипт для создания комментария на указанный список JIRA задач
+#author       :Azamat Kalmurzayev
+#usage        :python ci_post_task_comments.py JIRA_HOST JIRA_USER JIRA_PSWD COMMENT_TEXT JIRA_TASK_IDS...
+#===================================================================
+
 import sys
 import json
 import requests

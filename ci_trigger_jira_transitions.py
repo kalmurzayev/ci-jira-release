@@ -1,3 +1,10 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#description  :CI/CD скрипт для вызова transition указанного списка JIRA задач по указанному JIRA transition id
+#author       :Azamat Kalmurzayev
+#usage        :python ci_trigger_jira_transitions.py JIRA_HOST JIRA_USER JIRA_PSWD JIRA_TRANSITION_ID JIRA_TASK_IDS...
+#===================================================================
+
 import sys
 import json
 import requests
