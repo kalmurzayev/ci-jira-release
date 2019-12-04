@@ -20,6 +20,12 @@ while getopts ":v:o:c:r:" opt; do
   esac
 done
 
+if [ -z $CI_JIRA_USERNAME ] || [ -z $CI_JIRA_PASSWORD ]
+then
+    echo "ERROR: Please set CI_JIRA_USERNAME and CI_JIRA_PASSWORD and environment variable (in .bash_profile or .zshrc)"
+    exit 0
+fi
+
 if [ -z $credentialsFile ]
 then
     credentialsFile=".jiracredentials.txt"
@@ -40,7 +46,6 @@ credentialsFileContents=$(<$credentialsFile)
 IFS=$' ' read -ra credentials <<< "$credentialsFileContents"
 jiraServerHost=${credentials[0]}
 jiraUsername=${credentials[1]}
-jiraPassword=${credentials[2]}
 pythonScript=ci_request_jira_tasks.py
 
 # ----------- Start script actions -------------------
@@ -61,18 +66,18 @@ if [ -z $newVersion ]
 
 matchesString=$( IFS=$' '; echo "${jiraTaskIds[*]}" )
 echo "Sending $jiraTaskIds Jira REST API requests. Hold your breath..."
-generatedChangelog=$(python -W ignore $pythonScript $jiraServerHost $jiraUsername $jiraPassword $resolutionStatus $(echo $matchesString))
+generatedChangelog=$(python -W ignore $pythonScript $jiraServerHost $CI_JIRA_USERNAME $CI_JIRA_PASSWORD $resolutionStatus $(echo $matchesString))
 
 if [ -z $output ]
 then
     echo "$generatedChangelog"
 else
-    versionText="Version ${newVersion}"
+    versionText="Version ${newVersion}\n----------------\n\n"
     if [ -z $newVersion ]
     then
-        versionText="Next version candidate"
+        versionText=""
     fi
     echo "Writing release-notes to output file..."
-    echo -e "${versionText}\n----------------\n\n${generatedChangelog}" > $output
+    echo -e "${versionText}${generatedChangelog}" > $output
     echo "\033[0;32mDONE. Checkout $output"
 fi

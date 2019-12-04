@@ -1,0 +1,11 @@
+# The Deliverfile allows you to store various App Store Connect metadata
+# For more information, check out the docs
+# https://docs.fastlane.tools/actions/deliver/
+itc_provider: "3333333",
+dev_portal_team_id: "1111111",
+team_name: "YOUR TEAM NAME",
+skip_submission: true,
+username: "gmail@gmail.com",
+app_identifier: "kz.your.app",
+skip_waiting_for_build_processing: true,
+notify_external_testers: false

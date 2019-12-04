@@ -1,0 +1,5 @@
+project("YouApp.xcodeproj")
+scheme("Your App Scheme")
+devices(["iPhone 11"])
+clean(true)
+code_coverage(true)

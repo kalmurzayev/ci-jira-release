@@ -1,0 +1,258 @@
+fastlane_version "2.84.0"
+generated_fastfile_id "7f59eb69-208a-4305-93e5-dcb7097e37e7"
+
+default_platform :ios
+
+############################### DEVELOPMENT LANES ###############################
+
+# Extracts a current build version number and persists it to txt file for others to use
+lane :write_build_version_file do |options|
+    filename = options[:filename]
+    file = File.open('build_number.txt', 'w')
+    file.puts get_build_number
+    file.close
+end
+
+# Builds and distributes YourDevApp target with Debug Build config to corporate Crashlytics account
+lane :build_for_firebase_dev do
+    firebase_token = ENV["FIREBASE_TOKEN"]
+    if firebase_token.nil?
+        UI.user_error!("You need to set FIREBASE_TOKEN env var to perform Firebase deployment")
+    end
+
+    # Update certificates and carthages
+    certs_and_carthage_dev
+    # Update build number.
+    increment_build_number
+    
+    # Add badge to app icon
+    add_icon_badge
+    
+    # Build application
+    gym(
+        scheme: "YourDevApp",
+        export_method: "development",
+        export_options: {
+            provisioningProfiles: {
+                "kz.your.appdev" => "match Development kz.your.appdev",
+            }
+        },
+        skip_profile_detection: true
+    )
+    commit_bump_build_number(additional: "[firebase]")
+
+    firebase_app_distribution(
+        app: "FIREBASE_APP_ID",
+        groups: "group1, group2",
+        release_notes_file: "./fastlane/release_notes.txt",
+        firebase_cli_path: "/usr/local/bin/firebase"
+    )
+    clean_up_after_upload
+    build_number = get_build_number
+    release_notes = File.read("release_notes.txt")
+    send_slack_message(message: release_notes, build_number: build_number)
+    
+    # push bumped build version commit to development
+    if git_branch == "development" 
+        push_to_git_remote(remote: "origin", remote_branch: "development")
+    end
+end
+
+
+############################### RELEASE CYCLE LANES ###############################
+
+# lane for aggregating current release metadata and uploading to appstore connect with metadata-only
+lane :start_appstore_new_version do
+    current_version = get_version_number(target: "YourAppTarget")
+    release_notes = File.read("metadata/ru/release_notes.txt")
+    deliver(
+        submit_for_review: false,
+        app_version: current_version,
+        force: true,
+        metadata_path: "./metadata",
+        skip_screenshots: true,
+        skip_binary_upload: true,
+        release_notes: {
+            'ru': release_notes,
+        }
+    )
+end
+
+# lane for submitting current App build to Review
+lane :submit_appstore_review do |options|
+    current_version = get_version_number(target: "YourAppTarget")
+    target_build_number = options[:build_number]
+    if !target_build_number.nil?
+        target_build_number = get_build_number
+    end
+    release_notes = File.read("metadata/ru/release_notes.txt")
+    deliver(
+        submit_for_review: true,
+        app_version: current_version,
+        build_number: target_build_number,
+        force: true,
+        metadata_path: "./metadata",
+        skip_screenshots: true,
+        skip_binary_upload: true,
+        release_notes: {
+            'ru': release_notes,
+        }
+    )
+end
+
+# lane for finishing release cycle by proper tagging&pushing
+lane :release_finish_master do
+    sh("git", "checkout", "master")
+    sh("git", "pull", "origin", "master")
+    current_version = get_version_number(target: "YourAppTarget")
+    add_git_tag(tag: current_version, message: "Release version " + current_version)
+    sh("git", "push", "origin", "--tags")
+end
+
+lane :build_for_appstore do
+    certs_and_carthage_app_store
+    increment_build_number
+
+    # Build application
+    gym(
+        scheme: "YourAppTarget",
+        configuration: "Release",
+        clean:true,
+        export_team_id:"ABCD1234",
+        export_method: "app-store",
+        export_options: {
+            provisioningProfiles: {
+                "kz.your.app" => "match AppStore kz.your.app",
+            },
+            compileBitcode: false
+        }
+    )
+    testflight
+    clean_up_after_upload
+    commit_bump_build_number additional:"[release]"
+    sh("git", "push", "origin", "HEAD")
+end
+
+# ######################## SUPPORTING FUNCTIONS #################################
+
+# Update certs and provisioning profiles.
+lane :certs_and_carthage_dev do
+    match(
+        type: "development", 
+        force_for_new_devices: true, 
+        app_identifier: ["kz.your.appdev"],
+        readonly: true)
+    carthage(
+        command: "build",
+        platform: "iOS",
+        cache_builds: true,
+        use_binaries: false
+    )
+end
+
+lane :certs_and_carthage_app_store do
+    match(
+        type: "appstore",
+        template_name: "ApplePay In-App Provisioning Distribution",
+        app_identifier: ["kz.your.app"],
+        readonly: true)
+    carthage(
+        command: "build",
+        platform: "iOS",
+        cache_builds: true,
+        use_binaries: false
+    )
+end
+
+lane :update_certs_dev do
+    update_devices
+    match(
+        type: "development",
+        force_for_new_devices: true,
+        app_identifier: ["kz.your.appdev"],
+        readonly: false)
+end
+
+lane :update_certs_app_store do
+    update_devices
+    match(
+        type: "appstore",
+	force_for_new_devices: true,
+        template_name: "ApplePay In-App Provisioning Distribution",
+        app_identifier: ["kz.your.app"],
+        readonly: false)
+end
+
+lane :update_devices do
+    register_devices(devices_file: "./fastlane/devices.txt")
+end
+
+lane :send_slack_message do | options|
+    build_number = options[:build_number]
+    message = options[:message]
+    download_link = ENV["CI_FIREBASE_DOWNLOAD_LINK"]
+    slack_webhook = ENV["CI_SLACK_WEB_HOOK"]
+    if message.nil?
+        message = "Build " + build_number + " deployed to Firebase"
+    end
+
+    slack(
+        username: "Deployment",
+        message: message,
+        channel: "#ios_builds",  
+        slack_url: slack_webhook,
+        success: true,
+        default_payloads: [:git_branch],
+        attachment_properties: {
+            fields: [{
+                title: "Build number",
+                value: build_number,
+                short: false
+            },
+            {
+                title: "Download link",
+                value: download_link,
+                short: false
+            }]
+        }
+    )
+end
+
+# clean up project folder after build/upload (process is in fastlane folder)
+lane :clean_up_after_upload do
+    sh("git", "checkout", "../Config")
+    sh("git", "checkout", "../fastlane")
+    sh("git", "checkout", "../Resources")
+    sh("git", "clean", "-d", "-f", "../")
+end
+
+# separate lane for commiting and pushing incremented build number
+lane :commit_bump_build_number do |options|
+    additional = options[:additional]
+    additional_text = ""
+    if !additional.nil?
+        additional_text = " " + additional
+    end
+    # list all your project plists
+    git_add(path: "YourAppDev-Info.plist")
+    git_add(path: "YourAppTarget.xcodeproj/project.pbxproj")
+    git_add(path: "YourAppTargetTests/Info.plist")
+    git_add(path: "Info.plist")
+    current_number = get_build_number
+    sh("git", "commit", "-m", "ci(deploy): Build version " + current_number + additional_text + " [ci skip]")
+end
+
+# Lane for printing blue shield with Version and Build number
+lane :add_icon_badge do
+    current_version = get_version_number(target: "YourDevApp")
+    build_number = get_build_number
+    add_badge(
+        shield: current_version + "-" + build_number + "-blue",
+        no_badge: true,
+        shield_gravity: "South"
+    )
+end
+
+error do |lane, exception, options|
+
+end

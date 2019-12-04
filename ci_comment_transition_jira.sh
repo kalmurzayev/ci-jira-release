@@ -4,6 +4,11 @@
 #usage		 	:bash ci_comment_transition_jira.sh
 #===================================================================
 
+if [ -z $CI_JIRA_USERNAME ] || [ -z $CI_JIRA_PASSWORD ]
+then
+    echo "ERROR: Please set CI_JIRA_USERNAME and CI_JIRA_PASSWORD and environment variable (in .bash_profile or .zshrc)"
+    exit 0
+fi
 
 # ------------ Building Jira comment body ------------------
 tempFile="build_number.txt"
@@ -26,16 +31,14 @@ fi
 credentialsFileContents=$(<$credentialsFile)
 IFS=$' ' read -ra credentials <<< "$credentialsFileContents"
 jiraServerHost=${credentials[0]}
-jiraUsername=${credentials[1]}
-jiraPassword=${credentials[2]}
 jiraQaTransitionId="81"
 
 # --------------- Start script actions -------------------
 jiraTaskIds=$(./ci_extract_jira_tasks_git.sh )
 matchesString=$( IFS=$' '; echo "${jiraTaskIds[*]}" )
 echo "Jira comment text: $jiraCommentText"
-python -W ignore ci_post_task_comments.py $jiraServerHost $jiraUsername $jiraPassword "$(echo $jiraCommentText)" $(echo $matchesString)
+python -W ignore ci_post_task_comments.py $jiraServerHost $CI_JIRA_USERNAME $CI_JIRA_PASSWORD "$(echo $jiraCommentText)" $(echo $matchesString)
 echo ""
 echo "Transitioning Jira tasks to QA test..."
-python -W ignore ci_trigger_jira_transitions.py $jiraServerHost $jiraUsername $jiraPassword $jiraQaTransitionId $(echo $matchesString)
+python -W ignore ci_trigger_jira_transitions.py $jiraServerHost $CI_JIRA_USERNAME $CI_JIRA_PASSWORD $jiraQaTransitionId $(echo $matchesString)
 git clean -f
