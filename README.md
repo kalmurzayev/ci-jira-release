@@ -44,3 +44,7 @@ Fixes:
 DEF-1047: Fix visual bug found in login page by Vladimir
 XYZ-234: Fix Regression bug eliminated in release 2.1.1
 ```
+
+### Fastlane examples
+
+You can check `fastlane` folder for our fastlane workflow examples. Note that there are some dummy data and ENV_VAR references, so make sure to fill them out before copying and running these scripts.
