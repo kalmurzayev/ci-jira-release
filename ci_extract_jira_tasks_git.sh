@@ -29,5 +29,5 @@ fi
 # ----------- Start script actions -------------------
 GIT_MESSAGES=$(git log -n 150 --oneline $(echo $commitFrom)...HEAD)
 
-matches=$(echo $GIT_MESSAGES | grep -Eo "[A-Z]{2,7}\-[0-9]+" | sort | uniq )
+matches=$(echo $GIT_MESSAGES | grep -Eo "[A-Za-z]{2,7}\-[0-9]+" | sort | uniq )
 echo $matches

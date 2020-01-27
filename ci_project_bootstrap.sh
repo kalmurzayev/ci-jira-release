@@ -8,7 +8,7 @@
 # 1) ruby
 # 2) Ruby Gem
 # 3) Node.js and npm (for Firebase CLI tools) https://nodejs.org/en/
-# 3) Xcode 11.0 for Mojave: install from AppStore
+# 3) Xcode 11.1 for Mojave: install from AppStore
 # 4) Если возникнет "error with active developer directory", нужно изменить активную директорию для xcode CLI:
 #    https://github.com/nodejs/node-gyp/issues/569#issuecomment-104284148
 
@@ -16,7 +16,6 @@
 # 1) Наличие учетной записи в удаленном репозитории для CI/CD
 # 2) Наличие учетной записи и пароля в Developer Portal и AppStoreConnect для CI/CD
 # 3) Наличие FIREBASE_TOKEN env var на машине для загрузки билдов в Firebase App Distribution
-# 3) Файл `.jiracredentials.txt`. Заполнить!
 
 projectBootstrapArtText="$(base64 -D <<< "ICAgX19fICAgICBfX18gICAgX19fX18gICBfICAgXyAgICAgX19fICAKICAvIF9ffCAgIHwgX198ICB8XyAgIF98IHwgfCB8IHwgICB8IF8gXCAKICBcX18gXCAgIHwgX3wgICAgIHwgfCAgIHwgfF98IHwgICB8ICBfLyAKICB8X19fLyAgIHxfX198ICAgX3xffF8gICBcX19fLyAgIF98X3xfICAKX3wiIiIiInxffCIiIiIifF98IiIiIiJ8X3wiIiIiInxffCAiIiIgfCAKImAtMC0wLSciYC0wLTAtJyJgLTAtMC0nImAtMC0wLSciYC0wLTAtJyA=")"
 echo "$projectBootstrapArtText"
@@ -59,6 +58,10 @@ fi
 carthage update --platform iOS --verbose --new-resolver
 
 # ----------------- Required environment variables ---------------------
+if [ ! -f $CI_JIRA_SERVER_HOST ] 
+then
+	echo "WARNING: Make sure to set CI_JIRA_SERVER_HOST environment variable"
+fi
 if [ ! -f $CI_JIRA_USERNAME ] 
 then
 	echo "WARNING: Make sure to set CI_JIRA_USERNAME environment variable"

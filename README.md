@@ -6,6 +6,7 @@ Scripts for generating JIRA project release notes based on git log history
 * Git commit format including JIRA tasks in commit messages or branch names
 * GitFlow-like development  (maintaining stable branches)
 * python 2.7+
+* 
 
 ### Format
 
@@ -15,17 +16,32 @@ Generates release notes text for a new app version  and writes to specified file
 
 If called with no parameters, it collects Jira issues starting from latest deployment commit matched by regex (see script for details)
 
-### Credentials file
+### Required Environment variables
 
-Release notes generation relies on contents of your `.jiracredentials.txt` file. Fill it in according to provided example:
+Make sure to set environment variables during script runs:
 
-`JIRA_HOST JIRA_USERNAME JIRA_PASSWORD`
+- `CI_JIRA_SERVER_HOST` 
 
-*Make sure to include your `.jiracredentials.txt` file to `.gitignore`*
+- `CI_JIRA_USERNAME`
+
+- `CI_JIRA_PASSWORD`
+
+Optional variables:
+
+- `LATEST_DEPLOY_COMMIT_MATCH` 
+
+Keyword used in `ci_latest_deploy_commit.sh`, used in pattern-matching for finding latest deployment commit (examples: `"testflight"`, `"crashlytics"`).
+Keywords correspond to deployment ecosystem target, to where test/prod application in archived+deployed.
+This implies a convention, where app deployments are marked with special commits.
+
+Example:
+
+`ci(deploy): app build version 777 [crashlytics] [ci skip]`
+
 
 ### Usage
 
-Usage example `./ci_generate_release_notes.sh -v 2.5.0 -o fastlane/release_notes.txt`
+Usage example `./ci_generate_release_notes.sh -v 2.5.0 -o fastlane/release_notes.txt -r unresolved`
 
 Example notes:
 
@@ -43,7 +59,12 @@ Fixes:
 
 DEF-1047: Fix visual bug found in login page by Vladimir
 XYZ-234: Fix Regression bug eliminated in release 2.1.1
+
+Tech-maintenance tasks:
+
+ABC-1001: remove all legacy request methods
 ```
+
 
 ### Fastlane examples
 

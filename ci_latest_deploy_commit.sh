@@ -4,7 +4,6 @@
 #usage		 	:bash ci_latest_deploy_commit.sh
 #===================================================================
 
-
 latestTag=$(git describe --abbrev=0 --tags) 
 if [ -z $latestTag ] 
 then
@@ -13,7 +12,12 @@ then
 fi
 
 # ----------- Start script actions -------------------
-gitMessages=$(git log -n 150 --oneline $(echo $latestTag)..HEAD)
-gitLogMatch=$(echo "$gitMessages" | grep -Eo -m 1 "(.+) ci\(deploy\):" | uniq )
+gitMessages=$(git log -n 200 --oneline $(echo $latestTag)..HEAD)
+additionalMatchText="\[$LATEST_DEPLOY_COMMIT_MATCH\]"
+if [ -z $LATEST_DEPLOY_COMMIT_MATCH ] 
+then
+	additionalMatchText=""
+fi
+gitLogMatch=$(echo "$gitMessages" | grep -Eo -m 1 "(.+) ci\(deploy\):.+$additionalMatchText" | uniq )
 commitHash=$(echo "$gitLogMatch" | grep -Eo -m 1 "[0-9a-f]{8}" | uniq )
 echo $commitHash

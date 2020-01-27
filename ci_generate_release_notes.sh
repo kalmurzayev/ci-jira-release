@@ -11,8 +11,6 @@ while getopts ":v:o:c:r:" opt; do
     ;;
     o) output="$OPTARG"
     ;;
-    c) credentialsFile="$OPTARG"
-    ;;
     r) resolutionStatus="$OPTARG"
     ;;
     \?) echo "\e[31Invalid option -$OPTARG" >&2
@@ -20,15 +18,10 @@ while getopts ":v:o:c:r:" opt; do
   esac
 done
 
-if [ -z $CI_JIRA_USERNAME ] || [ -z $CI_JIRA_PASSWORD ]
+if [ -z $CI_JIRA_SERVER_HOST ] || [ -z $CI_JIRA_USERNAME ] || [ -z $CI_JIRA_PASSWORD ]
 then
-    echo "ERROR: Please set CI_JIRA_USERNAME and CI_JIRA_PASSWORD and environment variable (in .bash_profile or .zshrc)"
+    echo "ERROR: Please set CI_JIRA_SERVER_HOST, CI_JIRA_USERNAME and CI_JIRA_PASSWORD and environment variable (in .bash_profile or .zshrc)"
     exit 0
-fi
-
-if [ -z $credentialsFile ]
-then
-    credentialsFile=".jiracredentials.txt"
 fi
 
 if [ -z $resolutionStatus ]
@@ -36,16 +29,6 @@ then
     resolutionStatus="all"
 fi
 
-# reading contents of user specified .jiracredentials.txt
-if [ ! -f $credentialsFile ] 
-then
-	echo '\033[0;31mNo .jiracredentials.txt file not passed or found'
-	exit 1
-fi
-credentialsFileContents=$(<$credentialsFile)
-IFS=$' ' read -ra credentials <<< "$credentialsFileContents"
-jiraServerHost=${credentials[0]}
-jiraUsername=${credentials[1]}
 pythonScript=ci_request_jira_tasks.py
 
 # ----------- Start script actions -------------------
@@ -66,7 +49,7 @@ if [ -z $newVersion ]
 
 matchesString=$( IFS=$' '; echo "${jiraTaskIds[*]}" )
 echo "Sending $jiraTaskIds Jira REST API requests. Hold your breath..."
-generatedChangelog=$(python -W ignore $pythonScript $jiraServerHost $CI_JIRA_USERNAME $CI_JIRA_PASSWORD $resolutionStatus $(echo $matchesString))
+generatedChangelog=$(python -W ignore $pythonScript $CI_JIRA_SERVER_HOST $CI_JIRA_USERNAME $CI_JIRA_PASSWORD $resolutionStatus $(echo $matchesString))
 
 if [ -z $output ]
 then

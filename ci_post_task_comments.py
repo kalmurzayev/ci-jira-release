@@ -39,7 +39,3 @@ jira_key_arg_strings = sys.argv[5:]
 for jira_key_arg in jira_key_arg_strings:
     jira_issue_tuple = post_jira_comment(jira_server_arg, jira_user_arg, jira_password_arg, jira_key_arg, jira_comment_text)
     print jira_issue_tuple[0] + ': ' + str(jira_issue_tuple[1])
-
-
-
-
