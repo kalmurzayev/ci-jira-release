@@ -65,6 +65,13 @@ Tech-maintenance tasks:
 ABC-1001: remove all legacy request methods
 ```
 
+### Release scripts
+
+`./ci_release_start.sh 1.2` - starts new app version 1.2
+
+- performs branch cut, sets+pushes proper tags
+- creates+pushes corresponding release/[VERSION] branch
+- for iOS: initiates new app version in AppStoreConnect
 
 ### Fastlane examples
 
